@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Chess 🐎</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        #game-board {
+            grid-template-columns: repeat(5, 80px);
+            grid-template-rows: repeat(5, 80px);
+        }
+
+        .cell {
+            width: 80px;
+            height: 80px;
+            font-size: 2.5em;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #score-board {
+            display: flex;
+            justify-content: space-around;
+            width: 320px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .player-score {
+            padding: 10px 20px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .player-score.x {
+            color: #e74c3c;
+        }
+
+        .player-score.o {
+            color: #3498db;
+        }
+
+        #game-board {
+            display: grid;
+            gap: 5px;
+            background-color: #333;
+            border: 5px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell {
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+
+        .cell.x {
+            color: #e74c3c; /* Red for X */
+        }
+
+        .cell.o {
+            color: #3498db; /* Blue for O */
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #555;
+        }
+
+        #reset-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #reset-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Chess 🐎</h1>
+    <div id="score-board">
+        <div id="player-x-score" class="player-score x">Player X: 0</div>
+        <div id="player-o-score" class="player-score o">Player O: 0</div>
+    </div>
+    <div id="game-board">
+        <div class="cell" data-cell-index="0"></div>
+        <div class="cell" data-cell-index="1"></div>
+        <div class="cell" data-cell-index="2"></div>
+        <div class="cell" data-cell-index="3"></div>
+        <div class="cell" data-cell-index="4"></div>
+        <div class="cell" data-cell-index="5"></div>
+        <div class="cell" data-cell-index="6"></div>
+        <div class="cell" data-cell-index="7"></div>
+        <div class="cell" data-cell-index="8"></div>
+        <div class="cell" data-cell-index="9"></div>
+        <div class="cell" data-cell-index="10"></div>
+        <div class="cell" data-cell-index="11"></div>
+        <div class="cell" data-cell-index="12"></div>
+        <div class="cell" data-cell-index="13"></div>
+        <div class="cell" data-cell-index="14"></div>
+        <div class="cell" data-cell-index="15"></div>
+        <div class="cell" data-cell-index="16"></div>
+        <div class="cell" data-cell-index="17"></div>
+        <div class="cell" data-cell-index="18"></div>
+        <div class="cell" data-cell-index="19"></div>
+        <div class="cell" data-cell-index="20"></div>
+        <div class="cell" data-cell-index="21"></div>
+        <div class="cell" data-cell-index="22"></div>
+        <div class="cell" data-cell-index="23"></div>
+        <div class="cell" data-cell-index="24"></div>
+    </div>
+    <div id="status"></div>
+    <button id="reset-button">Reset Game</button>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusDisplay = document.getElementById('status');
+        const resetButton = document.getElementById('reset-button');
+        const playerXScoreDisplay = document.getElementById('player-x-score');
+        const playerOScoreDisplay = document.getElementById('player-o-score');
+
+        let gameActive = true;
+        let currentPlayer = 'X';
+        let gameState = Array(25).fill(''); // Represents the 5x5 board state
+        let playerXScore = 0;
+        let playerOScore = 0;
+
+        const winningConditions = [];
+
+        // Generate horizontal winning conditions
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c <= 2; c++) {
+                winningConditions.push([r * 5 + c, r * 5 + c + 1, r * 5 + c + 2]);
+            }
+        }
+
+        // Generate vertical winning conditions
+        for (let c = 0; c < 5; c++) {
+            for (let r = 0; r <= 2; r++) {
+                winningConditions.push([r * 5 + c, (r + 1) * 5 + c, (r + 2) * 5 + c]);
+            }
+        }
+
+        // Generate diagonal winning conditions (top-left to bottom-right)
+        for (let r = 0; r <= 2; r++) {
+            for (let c = 0; c <= 2; c++) {
+                winningConditions.push([r * 5 + c, (r + 1) * 5 + c + 1, (r + 2) * 5 + c + 2]);
+            }
+        }
+
+        // Generate diagonal winning conditions (top-right to bottom-left)
+        for (let r = 0; r <= 2; r++) {
+            for (let c = 2; c < 5; c++) {
+                winningConditions.push([r * 5 + c, (r + 1) * 5 + c - 1, (r + 2) * 5 + c - 2]);
+            }
+        }
+
+        function handleCellPlayed(clickedCell, clickedCellIndex) {
+            gameState[clickedCellIndex] = currentPlayer;
+            clickedCell.innerHTML = currentPlayer;
+            clickedCell.classList.add(currentPlayer.toLowerCase());
+        }
+
+        function handlePlayerChange() {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusDisplay.innerHTML = `It's ${currentPlayer}'s turn`;
+        }
+
+        function getPlayerPieces(player) {
+            const playerPieces = [];
+            for (let i = 0; i < gameState.length; i++) {
+                if (gameState[i] === player) {
+                    playerPieces.push(i);
+                }
+            }
+            return playerPieces;
+        }
+
+        function getKnightMoves(index) {
+            const row = Math.floor(index / 5);
+            const col = index % 5;
+            const moves = [];
+
+            const knightOffsets = [
+                [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                [1, -2], [1, 2], [2, -1], [2, 1]
+            ];
+
+            for (const [rowOffset, colOffset] of knightOffsets) {
+                const newRow = row + rowOffset;
+                const newCol = col + colOffset;
+
+                if (newRow >= 0 && newRow < 5 && newCol >= 0 && newCol < 5) {
+                    moves.push(newRow * 5 + newCol);
+                }
+            }
+            return moves;
+        }
+
+        function handleResultValidation() {
+            let roundWon = false;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = gameState[winCondition[0]];
+                let b = gameState[winCondition[1]];
+                let c = gameState[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+                if (a === b && b === c) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusDisplay.innerHTML = `Player ${currentPlayer} has won!`;
+                gameActive = false;
+                if (currentPlayer === 'X') {
+                    playerXScore++;
+                    playerXScoreDisplay.innerHTML = `Player X: ${playerXScore}`;
+                } else {
+                    playerOScore++;
+                    playerOScoreDisplay.innerHTML = `Player O: ${playerOScore}`;
+                }
+                return;
+            }
+
+            let roundDraw = !gameState.includes('');
+            if (roundDraw) {
+                statusDisplay.innerHTML = `Game ended in a draw!`;
+                gameActive = false;
+                return;
+            }
+
+            handlePlayerChange();
+        }
+
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+
+            if (gameState[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            const currentPlayerPieces = getPlayerPieces(currentPlayer);
+
+            if (currentPlayerPieces.length === 0) {
+                // First move for the player, can place anywhere
+                gameState[clickedCellIndex] = currentPlayer;
+                clickedCell.innerHTML = currentPlayer;
+                clickedCell.classList.add(currentPlayer.toLowerCase());
+                handleResultValidation();
+            } else {
+                // Subsequent moves, must be a knight's move from an existing piece
+                let isValidPlacement = false;
+                for (const pieceIndex of currentPlayerPieces) {
+                    const validMoves = getKnightMoves(pieceIndex);
+                    if (validMoves.includes(clickedCellIndex)) {
+                        isValidPlacement = true;
+                        break;
+                    }
+                }
+
+                if (isValidPlacement) {
+                    gameState[clickedCellIndex] = currentPlayer;
+                    clickedCell.innerHTML = currentPlayer;
+                    clickedCell.classList.add(currentPlayer.toLowerCase());
+                    handleResultValidation();
+                } else {
+                    statusDisplay.innerHTML = `Invalid move! ${currentPlayer} must place a piece a knight's move away from an existing ${currentPlayer} piece.`;
+                }
+            }
+        }
+
+        function handleResetGame() {
+            gameActive = true;
+            currentPlayer = 'X';
+            gameState = Array(25).fill('');
+            statusDisplay.innerHTML = `It's ${currentPlayer}'s turn`;
+            cells.forEach(cell => {
+                cell.innerHTML = '';
+                cell.classList.remove('x', 'o');
+            });
+            // Do not reset scores here, only reset the board for a new round
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        resetButton.addEventListener('click', handleResetGame);
+
+        statusDisplay.innerHTML = `It's ${currentPlayer}'s turn`;
+    </script>
+</body>
+</html>
